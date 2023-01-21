@@ -15,7 +15,7 @@ public class navXFactoryBuilder {
     private static class GyroscopeImplementation implements Gyroscope {
         private final AHRS navX;
         private final SimDouble angleSim;
-        private static double gyroOffset = 0.0;
+        private static Rotation2d gyroOffset = new Rotation2d();
 
         private GyroscopeImplementation(AHRS navX) {
             this.navX = navX;
@@ -27,11 +27,11 @@ public class navXFactoryBuilder {
         public Rotation2d getGyroHeading() {
             if (navX.isMagnetometerCalibrated()) {
                 // We will only get valid fused headings if the magnetometer is calibrated
-                return Rotation2d.fromDegrees(navX.getFusedHeading() + gyroOffset);
+                return Rotation2d.fromDegrees(navX.getFusedHeading()).plus(gyroOffset);
             }
             // We have to invert the angle of the NavX so that rotating the robot
             // counter-clockwise makes the angle increase.
-            return Rotation2d.fromDegrees(360.0 - navX.getYaw() + gyroOffset);
+            return navX.getRotation2d().plus(gyroOffset);
         }
 
         @Override
@@ -40,13 +40,13 @@ public class navXFactoryBuilder {
         }
 
         @Override
-        public void zeroGyroscope(double angle) {
-            gyroOffset = angle - getGyroHeading().getDegrees();
+        public void zeroGyroscope(Rotation2d angle) {
+            gyroOffset = angle.minus(getGyroHeading());
         }
 
         @Override
-        public void setAngle(double angle) {
-            angleSim.set(angle);
+        public void setAngleSim(Rotation2d angle) {
+            angleSim.set(angle.getDegrees());
         }
     }
 }

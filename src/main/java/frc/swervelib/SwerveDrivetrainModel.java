@@ -140,12 +140,12 @@ public class SwerveDrivetrainModel {
             double azmthShaftVel = modules.get(idx).getAzimuthEncoderVelocityRPM();
             double steerVelocity = modules.get(idx).getAzimuthMotorVelocityRPM();
             double wheelVelocity = modules.get(idx).getWheelEncoderVelocityRPM();
-            realModules.get(idx).getAbsoluteEncoder().setAbsoluteEncoder(azmthShaftPos, azmthShaftVel);
+            realModules.get(idx).getAbsoluteEncoder().setAbsoluteEncoder(Rotation2d.fromRotations(azmthShaftPos), azmthShaftVel);
             realModules.get(idx).getSteerController().setSteerEncoder(steerMotorPos, steerVelocity);
             realModules.get(idx).getDriveController().setDriveEncoder(wheelPos, wheelVelocity);
         }
         // Update associated devices based on drivetrain motion
-        gyro.setAngle(-swerveDt.getCurPose().getRotation().getDegrees());
+        gyro.setAngleSim(swerveDt.getCurPose().getRotation());
         // Based on gyro and measured module speeds and positions, estimate where our
         // robot should have moved to.
         Pose2d prevEstPose = curEstPose;
@@ -200,7 +200,7 @@ public class SwerveDrivetrainModel {
 
     public void setKnownPose(Pose2d in) {
         resetWheelEncoders();
-        gyro.zeroGyroscope(in.getRotation().getDegrees());
+        gyro.zeroGyroscope(in.getRotation());
         m_poseEstimator.resetPosition(getGyroscopeRotation(), getPositions(), in);
         curEstPose = in;
     }
@@ -212,7 +212,7 @@ public class SwerveDrivetrainModel {
     }
 
     public void zeroGyroscope() {
-        gyro.zeroGyroscope(0.0);
+        gyro.zeroGyroscope(new Rotation2d());
     }
 
     public Rotation2d getGyroscopeRotation() {

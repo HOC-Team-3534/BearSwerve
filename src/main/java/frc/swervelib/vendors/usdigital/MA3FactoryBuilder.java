@@ -1,5 +1,6 @@
 package frc.swervelib.vendors.usdigital;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
@@ -33,24 +34,20 @@ public class MA3FactoryBuilder {
         }
 
         @Override
-        public double getAbsoluteAngle() {
+        public Rotation2d getAbsoluteAngle() {
             angle = (1.0 - encoder.getVoltage() / RobotController.getVoltage5V()) * 2.0 * Math.PI;
             angle += configuration.getOffset();
-            angle %= 2.0 * Math.PI;
-            if (angle < 0.0) {
-                angle += 2.0 * Math.PI;
-            }
-            return angle;
+            return Rotation2d.fromRadians(angle);
         }
 
         @Override
-        public double getAbsoluteAngleRetry() {
+        public Rotation2d getAbsoluteAngleRetry() {
             // No communication error to
             return getAbsoluteAngle();
         }
 
         @Override
-        public void setAbsoluteEncoder(double position, double velocity) {
+        public void setAbsoluteEncoder(Rotation2d position, double velocity) {
             // encoder.setSimDevice(device);
         }
     }

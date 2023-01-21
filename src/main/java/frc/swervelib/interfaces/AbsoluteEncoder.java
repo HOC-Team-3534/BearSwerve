@@ -1,14 +1,16 @@
 package frc.swervelib.interfaces;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
 public interface AbsoluteEncoder {
     /**
-     * Gets the current angle reading of the encoder in radians.
+     * Gets the current angle reading of the encoder.
      *
-     * @return The current angle in radians. Range: [0, 2pi)
+     * @return The current angle
      */
-    double getAbsoluteAngle();
+    Rotation2d getAbsoluteAngle();
 
-    double getAbsoluteAngleRetry();
+    Rotation2d getAbsoluteAngleRetry();
 
-    void setAbsoluteEncoder(double position, double velocity);
+    void setAbsoluteEncoder(Rotation2d position, double velocity);
 }

@@ -6,6 +6,7 @@ import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.CANCoderStatusFrame;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.swervelib.interfaces.AbsoluteEncoder;
 import frc.swervelib.interfaces.functional.AbsoluteEncoderFactory;
@@ -13,7 +14,7 @@ import frc.swervelib.interfaces.functional.AbsoluteEncoderFactory;
 public class CanCoderFactoryBuilder {
     private Direction direction = Direction.COUNTER_CLOCKWISE;
     private int periodMilliseconds = 10;
-    private static double angle = 0;
+    private static Rotation2d angle = new Rotation2d();
 
     public CanCoderFactoryBuilder withReadingUpdatePeriod(int periodMilliseconds) {
         this.periodMilliseconds = periodMilliseconds;
@@ -47,7 +48,7 @@ public class CanCoderFactoryBuilder {
         }
 
         @Override
-        public double getAbsoluteAngleRetry() {
+        public Rotation2d getAbsoluteAngleRetry() {
             double time = Timer.getFPGATimestamp();
             boolean success = false;
             boolean timeout = false;
@@ -60,21 +61,16 @@ public class CanCoderFactoryBuilder {
         }
 
         @Override
-        public double getAbsoluteAngle() {
-            angle = Math.toRadians(encoder.getPosition());
-            angle %= 2.0 * Math.PI;
-            if (angle < 0.0) {
-                angle += 2.0 * Math.PI;
-            }
-            return angle;
+        public Rotation2d getAbsoluteAngle() {
+            return Rotation2d.fromRadians(encoder.getPosition());
         }
 
         @Override
-        public void setAbsoluteEncoder(double position, double velocity) {
+        public void setAbsoluteEncoder(Rotation2d position, double velocity) {
             // Position is in revolutions. Velocity is in RPM
             // CANCoder wants steps for postion. Steps per 100ms for velocity. CANCoder has
             // 4096 CPR.
-            encoder.getSimCollection().setRawPosition((int) (position * 4096));
+            encoder.getSimCollection().setRawPosition((int) (position.getRotations() * 4096));
             // Divide by 600 to go from RPM to Rotations per 100ms. CANCoder has 4096 CPR.
             encoder.getSimCollection().setVelocity((int) (velocity / 600 * 4096));
         }

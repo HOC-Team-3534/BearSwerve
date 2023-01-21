@@ -10,7 +10,7 @@ import frc.swervelib.interfaces.Gyroscope;
 
 public class PigeonFactoryBuilder {
     private static BasePigeonSimCollection pigeonSim;
-    private static double gyroOffset = 0.0;
+    private static Rotation2d gyroOffset = new Rotation2d();
 
     public Gyroscope build(WPI_PigeonIMU pigeon) {
         return new GyroscopeImplementation(pigeon);
@@ -30,7 +30,7 @@ public class PigeonFactoryBuilder {
 
         @Override
         public Rotation2d getGyroHeading() {
-            return Rotation2d.fromDegrees(pigeon.getFusedHeading() + gyroOffset);
+            return Rotation2d.fromDegrees(pigeon.getFusedHeading()).plus(gyroOffset);
         }
 
         @Override
@@ -39,13 +39,13 @@ public class PigeonFactoryBuilder {
         }
 
         @Override
-        public void zeroGyroscope(double angle) {
-            gyroOffset = angle - getGyroHeading().getDegrees();
+        public void zeroGyroscope(Rotation2d angle) {
+            gyroOffset = angle.minus(getGyroHeading());
         }
 
         @Override
-        public void setAngle(double angle) {
-            pigeonSim.setRawHeading(angle);
+        public void setAngleSim(Rotation2d angle) {
+            pigeonSim.setRawHeading(angle.getDegrees());
         }
     }
 
@@ -59,7 +59,7 @@ public class PigeonFactoryBuilder {
 
         @Override
         public Rotation2d getGyroHeading() {
-            return Rotation2d.fromDegrees(-pigeon.getAngle() + gyroOffset);
+            return pigeon.getRotation2d().plus(gyroOffset);
         }
 
         @Override
@@ -68,13 +68,13 @@ public class PigeonFactoryBuilder {
         }
 
         @Override
-        public void zeroGyroscope(double angle) {
-            gyroOffset = angle - getGyroHeading().getDegrees();
+        public void zeroGyroscope(Rotation2d angle) {
+            gyroOffset = angle.minus(getGyroHeading());
         }
 
         @Override
-        public void setAngle(double angle) {
-            pigeonSim.setRawHeading(angle);
+        public void setAngleSim(Rotation2d angle) {
+            pigeonSim.setRawHeading(angle.getDegrees());
         }
     }
 }

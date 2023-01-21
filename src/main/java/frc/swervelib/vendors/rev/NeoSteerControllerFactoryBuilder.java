@@ -9,6 +9,7 @@ import frc.swervelib.interfaces.AbsoluteEncoder;
 import frc.swervelib.interfaces.SteerController;
 import frc.swervelib.interfaces.functional.AbsoluteEncoderFactory;
 import frc.swervelib.interfaces.functional.SteerControllerFactory;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardContainer;
 
@@ -67,7 +68,7 @@ public final class NeoSteerControllerFactoryBuilder {
         public void addDashboardEntries(ShuffleboardContainer container,
                                         ControllerImplementation controller) {
             SteerControllerFactory.super.addDashboardEntries(container, controller);
-            container.addNumber("Absolute Encoder Angle", () -> Math.toDegrees(controller.absoluteEncoder.getAbsoluteAngle()));
+            container.addNumber("Absolute Encoder Angle", () -> controller.absoluteEncoder.getAbsoluteAngle().getDegrees());
         }
 
         @Override
@@ -90,7 +91,7 @@ public final class NeoSteerControllerFactoryBuilder {
             RelativeEncoder integratedEncoder = motor.getEncoder();
             integratedEncoder.setPositionConversionFactor(2.0 * Math.PI * moduleConfiguration.getSteerReduction());
             integratedEncoder.setVelocityConversionFactor(2.0 * Math.PI * moduleConfiguration.getSteerReduction() / 60.0);
-            integratedEncoder.setPosition(absoluteEncoder.getAbsoluteAngle());
+            integratedEncoder.setPosition(absoluteEncoder.getAbsoluteAngle().getRadians());
             SparkMaxPIDController controller = motor.getPIDController();
             if (hasPidConstants()) {
                 controller.setP(pidProportional);
@@ -110,7 +111,7 @@ public final class NeoSteerControllerFactoryBuilder {
         private final SparkMaxPIDController controller;
         private final RelativeEncoder motorEncoder;
         private final AbsoluteEncoder absoluteEncoder;
-        private double referenceAngleRadians = 0;
+        private Rotation2d referenceAngle = new Rotation2d();
         private double resetIteration = 0;
 
         public ControllerImplementation(CANSparkMax motor, AbsoluteEncoder absoluteEncoder) {
@@ -121,12 +122,12 @@ public final class NeoSteerControllerFactoryBuilder {
         }
 
         @Override
-        public double getReferenceAngle() {
-            return referenceAngleRadians;
+        public Rotation2d getReferenceAngle() {
+            return referenceAngle;
         }
 
         @Override
-        public void setReferenceAngle(double referenceAngleRadians) {
+        public void setReferenceAngle(Rotation2d referenceAngle) {
             double currentAngleRadians = motorEncoder.getPosition();
             // Reset the NEO's encoder periodically when the module is not rotating.
             // Sometimes (~5% of the time) when we initialize, the absolute encoder isn't
@@ -136,7 +137,7 @@ public final class NeoSteerControllerFactoryBuilder {
             if (motorEncoder.getVelocity() < ENCODER_RESET_MAX_ANGULAR_VELOCITY) {
                 if (++resetIteration >= ENCODER_RESET_ITERATIONS) {
                     resetIteration = 0;
-                    double absoluteAngle = absoluteEncoder.getAbsoluteAngle();
+                    double absoluteAngle = absoluteEncoder.getAbsoluteAngle().getRadians();
                     motorEncoder.setPosition(absoluteAngle);
                     currentAngleRadians = absoluteAngle;
                 }
@@ -149,13 +150,13 @@ public final class NeoSteerControllerFactoryBuilder {
             }
             // The reference angle has the range [0, 2pi) but the Neo's encoder can go above
             // that
-            double adjustedReferenceAngleRadians = referenceAngleRadians + currentAngleRadians - currentAngleRadiansMod;
-            if (referenceAngleRadians - currentAngleRadiansMod > Math.PI) {
+            double adjustedReferenceAngleRadians = referenceAngle.getRadians() + currentAngleRadians - currentAngleRadiansMod;
+            if (referenceAngle.getRadians() - currentAngleRadiansMod > Math.PI) {
                 adjustedReferenceAngleRadians -= 2.0 * Math.PI;
-            } else if (referenceAngleRadians - currentAngleRadiansMod < -Math.PI) {
+            } else if (referenceAngle.getRadians() - currentAngleRadiansMod < -Math.PI) {
                 adjustedReferenceAngleRadians += 2.0 * Math.PI;
             }
-            this.referenceAngleRadians = referenceAngleRadians;
+            this.referenceAngle = referenceAngle;
             controller.setReference(adjustedReferenceAngleRadians, ControlType.kPosition);
         }
 
@@ -175,13 +176,8 @@ public final class NeoSteerControllerFactoryBuilder {
         }
 
         @Override
-        public double getStateAngle() {
-            double motorAngleRadians = motorEncoder.getPosition();
-            motorAngleRadians %= 2.0 * Math.PI;
-            if (motorAngleRadians < 0.0) {
-                motorAngleRadians += 2.0 * Math.PI;
-            }
-            return motorAngleRadians;
+        public Rotation2d getStateAngle() {
+            return Rotation2d.fromRadians(motorEncoder.getPosition());
         }
 
         @Override

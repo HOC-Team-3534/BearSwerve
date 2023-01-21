@@ -1,12 +1,13 @@
 package frc.swervelib.interfaces;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.swervelib.helpers.ModuleConfiguration;
 
 public interface SwerveModule {
     double getDriveVelocity();
 
-    double getSteerAngle();
+    Rotation2d getSteerAngle();
 
     ModuleConfiguration getModuleConfiguration();
 
@@ -18,9 +19,9 @@ public interface SwerveModule {
 
     void resetWheelEncoder();
 
-    void set(double driveVoltage, double steerAngle);
+    void set(double driveVoltage, Rotation2d steerAngle);
 
-    void setVelocity(double driveVelocity, double steerAngle);
+    void setVelocity(double driveVelocity, Rotation2d steerAngle);
 
     SwerveModulePosition getPosition();
 }

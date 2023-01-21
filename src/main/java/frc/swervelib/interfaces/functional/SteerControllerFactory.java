@@ -7,8 +7,8 @@ import frc.swervelib.interfaces.SteerController;
 @FunctionalInterface
 public interface SteerControllerFactory<Controller extends SteerController, SteerConfiguration> {
     default void addDashboardEntries(ShuffleboardContainer container, Controller controller) {
-        container.addNumber("Current Angle", () -> Math.toDegrees(controller.getStateAngle()));
-        container.addNumber("Target Angle", () -> Math.toDegrees(controller.getReferenceAngle()));
+        container.addNumber("Current Angle", () -> controller.getStateAngle().getDegrees());
+        container.addNumber("Target Angle", () -> controller.getReferenceAngle().getDegrees());
     }
 
     default Controller create(ShuffleboardContainer dashboardContainer,

@@ -12,16 +12,16 @@ public interface Gyroscope {
 
   /**
    * Sets the gyroscope angle. This can be used to set the direction the robot is
-   * currently facing to the 'forwards' direction.
+   * currently facing to the 'forwards' direction with 0.
    */
-  void zeroGyroscope(double angle);
+  void zeroGyroscope(Rotation2d angle);
 
   /**
    * Sets the simulated gyroscope to a specified angle
    * 
-   * @param angle Angle to be set in degrees.
+   * @param angle Angle to be set
    */
-  void setAngle(double angle);
+  void setAngleSim(Rotation2d angle);
 
   /**
    * Determines if the Gyro is ready to be used.

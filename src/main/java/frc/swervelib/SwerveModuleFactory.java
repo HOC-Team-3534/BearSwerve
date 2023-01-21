@@ -70,7 +70,7 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
         }
 
         @Override
-        public double getSteerAngle() {
+        public Rotation2d getSteerAngle() {
             return steerController.getStateAngle();
         }
 
@@ -95,79 +95,37 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
         }
 
         @Override
-        public void set(double driveVoltage, double steerAngle) {
-            steerAngle %= (2.0 * Math.PI);
-            if (steerAngle < 0.0) {
-                steerAngle += 2.0 * Math.PI;
-            }
-            double difference = steerAngle - getSteerAngle();
-            // Change the target angle so the difference is in the range [-pi, pi) instead
-            // of [0, 2pi)
-            if (difference >= Math.PI) {
-                steerAngle -= 2.0 * Math.PI;
-            } else if (difference < -Math.PI) {
-                steerAngle += 2.0 * Math.PI;
-            }
-            difference = steerAngle - getSteerAngle(); // Recalculate difference
-            // If the difference is greater than 90 deg or less than -90 deg the drive can
-            // be inverted so the total
-            // movement of the module is less than 90 deg
-            if (difference > Math.PI / 2.0 || difference < -Math.PI / 2.0) {
-                // Only need to add 180 deg here because the target angle will be put back into
-                // the range [0, 2pi)
-                steerAngle += Math.PI;
+        public void set(double driveVoltage, Rotation2d steerAngle) {
+            if (isLongRotation(steerAngle)) {
+                steerAngle.plus(Rotation2d.fromDegrees(180));
                 driveVoltage *= -1.0;
-            }
-            // Put the target angle back into the range [0, 2pi)
-            steerAngle %= (2.0 * Math.PI);
-            if (steerAngle < 0.0) {
-                steerAngle += 2.0 * Math.PI;
             }
             driveController.setReferenceVoltage(driveVoltage);
             steerController.setReferenceAngle(steerAngle);
             this.driveVoltageCmdEntry.setDouble(driveVoltage);
-            this.steerAngleCmdEntry.setDouble(steerAngle * 180 / Math.PI);
+            this.steerAngleCmdEntry.setDouble(steerAngle.getDegrees());
         }
 
         @Override
-        public void setVelocity(double driveVelocity, double steerAngle) {
-            steerAngle %= (2.0 * Math.PI);
-            if (steerAngle < 0.0) {
-                steerAngle += 2.0 * Math.PI;
-            }
-            double difference = steerAngle - getSteerAngle();
-            // Change the target angle so the difference is in the range [-pi, pi) instead
-            // of [0, 2pi)
-            if (difference >= Math.PI) {
-                steerAngle -= 2.0 * Math.PI;
-            } else if (difference < -Math.PI) {
-                steerAngle += 2.0 * Math.PI;
-            }
-            difference = steerAngle - getSteerAngle(); // Recalculate difference
-            // If the difference is greater than 90 deg or less than -90 deg the drive can
-            // be inverted so the total
-            // movement of the module is less than 90 deg
-            if (difference > Math.PI / 2.0 || difference < -Math.PI / 2.0) {
-                // Only need to add 180 deg here because the target angle will be put back into
-                // the range [0, 2pi)
-                steerAngle += Math.PI;
+        public void setVelocity(double driveVelocity, Rotation2d steerAngle) {
+            if (isLongRotation(steerAngle)) {
+                steerAngle.plus(Rotation2d.fromDegrees(180));
                 driveVelocity *= -1.0;
-            }
-            // Put the target angle back into the range [0, 2pi)
-            steerAngle %= (2.0 * Math.PI);
-            if (steerAngle < 0.0) {
-                steerAngle += 2.0 * Math.PI;
             }
             driveController.setVelocity(driveVelocity);
             steerController.setReferenceAngle(steerAngle);
             this.driveVelocityCmdEntry.setDouble(driveVelocity);
-            this.steerAngleCmdEntry.setDouble(steerAngle * 180 / Math.PI);
+            this.steerAngleCmdEntry.setDouble(steerAngle.getDegrees());
+        }
+
+        private boolean isLongRotation(Rotation2d steerAngle) {
+            return Math.abs(steerAngle.minus(getSteerAngle()).getDegrees()) > 90;
         }
 
         @Override
         public SwerveModulePosition getPosition() {
             return new SwerveModulePosition(getDriveController().getDistanceMeters(),
-                                            new Rotation2d(getAbsoluteEncoder().getAbsoluteAngle()));
+                                            getAbsoluteEncoder().getAbsoluteAngle());
         }
     }
 }

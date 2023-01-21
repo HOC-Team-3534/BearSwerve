@@ -10,6 +10,7 @@ import frc.swervelib.interfaces.AbsoluteEncoder;
 import frc.swervelib.interfaces.SteerController;
 import frc.swervelib.interfaces.functional.AbsoluteEncoderFactory;
 import frc.swervelib.interfaces.functional.SteerControllerFactory;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardContainer;
@@ -90,7 +91,7 @@ public final class Falcon500SteerControllerFactoryBuilder {
         public void addDashboardEntries(ShuffleboardContainer container,
                                         ControllerImplementation controller) {
             SteerControllerFactory.super.addDashboardEntries(container, controller);
-            container.addNumber("Absolute Encoder Angle", () -> Math.toDegrees(controller.absoluteEncoder.getAbsoluteAngle()));
+            container.addNumber("Absolute Encoder Angle", () -> controller.absoluteEncoder.getAbsoluteAngle().getDegrees());
         }
 
         @Override
@@ -133,7 +134,7 @@ public final class Falcon500SteerControllerFactoryBuilder {
             motor.setInverted(moduleConfiguration.isSteerInverted() ? TalonFXInvertType.CounterClockwise
                                                                     : TalonFXInvertType.Clockwise);
             motor.setNeutralMode(NeutralMode.Brake);
-            motor.setSelectedSensorPosition(absoluteEncoder.getAbsoluteAngleRetry() / sensorPositionCoefficient, 0, CAN_TIMEOUT_MS);
+            motor.setSelectedSensorPosition(absoluteEncoder.getAbsoluteAngleRetry().getRadians() / sensorPositionCoefficient, 0, CAN_TIMEOUT_MS);
             // Reduce CAN status frame rates on real robots
             // Don't do this in simulation, or it causes lag and quantization of the voltage
             // signals which cause the sim model to be inaccurate and unstable.
@@ -148,11 +149,15 @@ public final class Falcon500SteerControllerFactoryBuilder {
     }
 
     private static class ControllerImplementation implements SteerController {
+        private static final int ENCODER_RESET_ITERATIONS = 500;
+        private static final double ENCODER_RESET_MAX_ANGULAR_VELOCITY = Math.toRadians(0.5);
         private final WPI_TalonFX motor;
         private final double motorEncoderPositionCoefficient;
+        private final double motorEncoderVelocityCoefficient;
         private final TalonFXControlMode motorControlMode;
         public final AbsoluteEncoder absoluteEncoder;
-        private double referenceAngleRadians = 0.0;
+        private Rotation2d referenceAngle = new Rotation2d();
+        private double resetIteration = 0;
 
         private ControllerImplementation(WPI_TalonFX motor, double motorEncoderPositionCoefficient,
                                          double motorEncoderVelocityCoefficient,
@@ -160,32 +165,50 @@ public final class Falcon500SteerControllerFactoryBuilder {
                                          AbsoluteEncoder absoluteEncoder) {
             this.motor = motor;
             this.motorEncoderPositionCoefficient = motorEncoderPositionCoefficient;
+            this.motorEncoderVelocityCoefficient = motorEncoderPositionCoefficient * 10;
             this.motorControlMode = motorControlMode;
             this.absoluteEncoder = absoluteEncoder;
         }
 
         @Override
-        public double getReferenceAngle() {
-            return referenceAngleRadians;
+        public Rotation2d getReferenceAngle() {
+            return referenceAngle;
         }
 
         @Override
-        public void setReferenceAngle(double referenceAngleRadians) {
+        public void setReferenceAngle(Rotation2d referenceAngle) {
             double currentAngleRadians = motor.getSelectedSensorPosition() * motorEncoderPositionCoefficient;
+            // YES THE COMMENT IS FOR NEOS. THAT IS HOW SDS HAD IT, NOT MY FAULT. IT APPLIES
+            // TO FALCONS
+            // Reset the NEO's encoder periodically when the module is not rotating.
+            // Sometimes (~5% of the time) when we initialize, the absolute encoder isn't
+            // fully set up, and we don't
+            // end up getting a good reading. If we reset periodically this won't matter
+            // anymore.
+            if (motor.getSelectedSensorVelocity() * motorEncoderVelocityCoefficient < ENCODER_RESET_MAX_ANGULAR_VELOCITY) {
+                if (++resetIteration >= ENCODER_RESET_ITERATIONS) {
+                    resetIteration = 0;
+                    double absoluteAngle = absoluteEncoder.getAbsoluteAngle().getRadians();
+                    motor.setSelectedSensorPosition(absoluteAngle / motorEncoderPositionCoefficient);
+                    currentAngleRadians = absoluteAngle;
+                }
+            } else {
+                resetIteration = 0;
+            }
             double currentAngleRadiansMod = currentAngleRadians % (2.0 * Math.PI);
             if (currentAngleRadiansMod < 0.0) {
                 currentAngleRadiansMod += 2.0 * Math.PI;
             }
             // The reference angle has the range [0, 2pi) but the Falcon's encoder can go
             // above that
-            double adjustedReferenceAngleRadians = referenceAngleRadians + currentAngleRadians - currentAngleRadiansMod;
-            if (referenceAngleRadians - currentAngleRadiansMod > Math.PI) {
+            double adjustedReferenceAngleRadians = referenceAngle.getRadians() + currentAngleRadians - currentAngleRadiansMod;
+            if (referenceAngle.getRadians() - currentAngleRadiansMod > Math.PI) {
                 adjustedReferenceAngleRadians -= 2.0 * Math.PI;
-            } else if (referenceAngleRadians - currentAngleRadiansMod < -Math.PI) {
+            } else if (referenceAngle.getRadians() - currentAngleRadiansMod < -Math.PI) {
                 adjustedReferenceAngleRadians += 2.0 * Math.PI;
             }
             motor.set(motorControlMode, adjustedReferenceAngleRadians / motorEncoderPositionCoefficient);
-            this.referenceAngleRadians = referenceAngleRadians;
+            this.referenceAngle = referenceAngle;
         }
 
         @Override
@@ -200,13 +223,8 @@ public final class Falcon500SteerControllerFactoryBuilder {
         }
 
         @Override
-        public double getStateAngle() {
-            double motorAngleRadians = motor.getSelectedSensorPosition() * motorEncoderPositionCoefficient;
-            motorAngleRadians %= 2.0 * Math.PI;
-            if (motorAngleRadians < 0.0) {
-                motorAngleRadians += 2.0 * Math.PI;
-            }
-            return motorAngleRadians;
+        public Rotation2d getStateAngle() {
+            return Rotation2d.fromRadians(motor.getSelectedSensorPosition() * motorEncoderPositionCoefficient);
         }
 
         @Override

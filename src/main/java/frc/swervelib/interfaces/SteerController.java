@@ -1,17 +1,18 @@
 package frc.swervelib.interfaces;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 
 public interface SteerController {
-    double getReferenceAngle();
+    Rotation2d getReferenceAngle();
 
-    void setReferenceAngle(double referenceAngleRadians);
+    void setReferenceAngle(Rotation2d referenceAngle);
 
     DCMotor getSteerMotor();
 
     AbsoluteEncoder getAbsoluteEncoder();
 
-    double getStateAngle();
+    Rotation2d getStateAngle();
 
     double getOutputVoltage();
 
