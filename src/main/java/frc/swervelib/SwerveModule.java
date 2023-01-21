@@ -1,5 +1,7 @@
 package frc.swervelib;
 
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
+
 public interface SwerveModule {
     double getDriveVelocity();
 
@@ -18,4 +20,6 @@ public interface SwerveModule {
     void set(double driveVoltage, double steerAngle);
 
     void setVelocity(double driveVelocity, double steerAngle);
+
+    SwerveModulePosition getPosition();
 }

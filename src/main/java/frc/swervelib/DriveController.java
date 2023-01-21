@@ -16,4 +16,6 @@ public interface DriveController {
     double getOutputVoltage();
 
     void setDriveEncoder(double position, double velocity);
+
+    double getDistanceMeters();
 }

@@ -76,7 +76,8 @@ public final class NeoDriveControllerFactoryBuilder {
 
             // Setup encoder
             RelativeEncoder encoder = motor.getEncoder();
-            double positionConversionFactor = Math.PI * moduleConfiguration.getWheelDiameter() * moduleConfiguration.getDriveReduction();
+            double positionConversionFactor = Math.PI * moduleConfiguration.getWheelDiameter()
+                    * moduleConfiguration.getDriveReduction();
             encoder.setPositionConversionFactor(positionConversionFactor);
             encoder.setVelocityConversionFactor(positionConversionFactor / 60.0);
 
@@ -121,7 +122,7 @@ public final class NeoDriveControllerFactoryBuilder {
         @Override
         public void setDriveEncoder(double position, double velocity) {
             motor.getEncoder().setPosition(position);
-            //motor.getEncoder().setVelocity()
+            // motor.getEncoder().setVelocity()
         }
 
         @Override
@@ -137,6 +138,11 @@ public final class NeoDriveControllerFactoryBuilder {
         @Override
         public double getOutputVoltage() {
             return motor.getBusVoltage() * motor.getAppliedOutput();
+        }
+
+        @Override
+        public double getDistanceMeters() {
+            return motor.getEncoder().getPosition();
         }
     }
 }
