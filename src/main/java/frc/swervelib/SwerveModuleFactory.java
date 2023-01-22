@@ -1,5 +1,6 @@
 package frc.swervelib;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.networktables.GenericEntry;
@@ -71,7 +72,7 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
 
         @Override
         public Rotation2d getSteerAngle() {
-            return steerController.getStateAngle();
+            return Rotation2d.fromRadians(MathUtil.angleModulus(steerController.getStateAngle().getRadians()));
         }
 
         @Override
