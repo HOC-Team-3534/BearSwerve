@@ -62,7 +62,7 @@ public class CanCoderFactoryBuilder {
 
         @Override
         public Rotation2d getAbsoluteAngle() {
-            return Rotation2d.fromRadians(encoder.getPosition());
+            return Rotation2d.fromRadians(encoder.getAbsolutePosition());
         }
 
         @Override
