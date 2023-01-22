@@ -49,6 +49,8 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
         private GenericEntry driveVoltageCmdEntry;
         private GenericEntry driveVelocityCmdEntry;
         private GenericEntry steerAngleCmdEntry;
+        private GenericEntry steerAngleReadingEntry;
+        private GenericEntry driveDistanceReadingEntry;
 
         private ModuleImplementation(DriveController driveController,
                                      SteerController steerController, String namePrefix) {
@@ -58,6 +60,10 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
             this.driveVelocityCmdEntry = tab.add(namePrefix
                                                  + "Wheel Velocity Cmd RPM", 0).getEntry();
             this.steerAngleCmdEntry = tab.add(namePrefix + "Azmth Des Angle Deg", 0).getEntry();
+            this.steerAngleReadingEntry = tab.add(namePrefix
+                                                  + "Azmth Curr Angle Deg", 0).getEntry();
+            this.driveDistanceReadingEntry = tab.add(namePrefix
+                                                     + "Wheel Position Dist Meters", 0).getEntry();
         }
 
         @Override
@@ -125,6 +131,8 @@ public class SwerveModuleFactory<DriveConfiguration, SteerConfiguration> {
 
         @Override
         public SwerveModulePosition getPosition() {
+            this.steerAngleReadingEntry.setDouble(getAbsoluteEncoder().getAbsoluteAngle().getDegrees());
+            this.driveDistanceReadingEntry.setDouble(getDriveController().getDistanceMeters());
             return new SwerveModulePosition(getDriveController().getDistanceMeters(),
                                             getAbsoluteEncoder().getAbsoluteAngle());
         }
